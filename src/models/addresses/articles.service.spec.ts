@@ -1,11 +1,11 @@
 import { ConfigService } from '@nestjs/config';
 import { ForbiddenException } from '@nestjs/common';
 import { FindOptionsWhere } from 'typeorm';
-import { RedisService } from '../../providers/cache/redis/redis.service';
-import { UsersRepository } from '../users/users.repository';
-import { User } from '../users/entities/user.entity';
-import { Article } from './entities/article.entity';
-import { ArticlesRepository } from './articles.repository';
+import { RedisService } from '../../infrastructure/cache/redis.service';
+import { UsersRepository } from '../../infrastructure/persistence/repositories/users.repository';
+import { User } from '../../infrastructure/persistence/entities/user.entity';
+import { Article } from '../../infrastructure/persistence/entities/article.entity';
+import { ArticlesRepository } from '../../infrastructure/persistence/repositories/articles.repository';
 import { ArticlesService } from './articles.service';
 
 describe('ArticlesService', () => {

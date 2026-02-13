@@ -1,13 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { User } from './entities/user.entity';
-import { UsersRepository } from './users.repository';
-
-export interface UserProfileResponse {
-  id: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { User } from '../../infrastructure/persistence/entities/user.entity';
+import { UsersRepository } from '../../infrastructure/persistence/repositories/users.repository';
+import {
+  UserProfileDataResponse,
+  UserProfileResponse,
+} from './interfaces/users-response.interface';
 
 @Injectable()
 export class UsersService {
@@ -25,21 +22,19 @@ export class UsersService {
     return this.usersRepository.create(email, passwordHash);
   }
 
-  async getProfileOrFail(
-    userId: string,
-  ): Promise<{ data: UserProfileResponse }> {
+  async getProfileOrFail(userId: string): Promise<UserProfileDataResponse> {
     const user = await this.findById(userId);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return {
-      data: {
-        id: user.id,
-        email: user.email,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+    const profile: UserProfileResponse = {
+      id: user.id,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
+
+    return { data: profile };
   }
 }

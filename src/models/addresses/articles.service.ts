@@ -11,37 +11,20 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
 } from 'typeorm';
-import { RedisService } from '../../providers/cache/redis/redis.service';
-import { Article } from './entities/article.entity';
-import { ArticlesRepository } from './articles.repository';
+import { RedisService } from '../../infrastructure/cache/redis.service';
+import { Article } from '../../infrastructure/persistence/entities/article.entity';
+import { ArticlesRepository } from '../../infrastructure/persistence/repositories/articles.repository';
+import { UsersRepository } from '../../infrastructure/persistence/repositories/users.repository';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { QueryArticlesDto } from './dto/query-articles.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
-import { UsersRepository } from '../users/users.repository';
-
-export interface ArticleResponse {
-  id: string;
-  title: string;
-  description: string;
-  publishedAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  author: {
-    id: string;
-    email: string;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-}
-
-export interface PaginatedArticlesResponse {
-  data: ArticleResponse[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-  };
-}
+import {
+  ArticleDataResponse,
+  ArticleResponse,
+  NormalizedArticlesQuery,
+  PaginatedArticlesResponse,
+  RemoveArticleResponse,
+} from './interfaces/articles.interface';
 
 @Injectable()
 export class ArticlesService {
@@ -64,7 +47,7 @@ export class ArticlesService {
   async create(
     createArticleDto: CreateArticleDto,
     authorId: string,
-  ): Promise<{ data: ArticleResponse }> {
+  ): Promise<ArticleDataResponse> {
     const author = await this.usersRepository.findById(authorId);
     if (!author) {
       throw new NotFoundException('Author not found');
@@ -138,11 +121,9 @@ export class ArticlesService {
     return response;
   }
 
-  async findOne(id: string): Promise<{ data: ArticleResponse }> {
+  async findOne(id: string): Promise<ArticleDataResponse> {
     const cacheKey = `${this.byIdCachePrefix}${id}`;
-    const cached = await this.redisService.get<{ data: ArticleResponse }>(
-      cacheKey,
-    );
+    const cached = await this.redisService.get<ArticleDataResponse>(cacheKey);
 
     if (cached) {
       return cached;
@@ -154,7 +135,9 @@ export class ArticlesService {
       throw new NotFoundException('Article not found');
     }
 
-    const response = { data: this.toArticleResponse(article) };
+    const response: ArticleDataResponse = {
+      data: this.toArticleResponse(article),
+    };
     await this.redisService.set(cacheKey, response, this.cacheTtlSeconds);
 
     return response;
@@ -164,7 +147,7 @@ export class ArticlesService {
     id: string,
     updateArticleDto: UpdateArticleDto,
     currentUserId: string,
-  ): Promise<{ data: ArticleResponse }> {
+  ): Promise<ArticleDataResponse> {
     const article = await this.articlesRepository.findByIdWithAuthor(id);
 
     if (!article) {
@@ -195,7 +178,7 @@ export class ArticlesService {
   async remove(
     id: string,
     currentUserId: string,
-  ): Promise<{ data: { id: string } }> {
+  ): Promise<RemoveArticleResponse> {
     const article = await this.articlesRepository.findByIdWithAuthor(id);
 
     if (!article) {
@@ -246,13 +229,7 @@ export class ArticlesService {
     }
   }
 
-  private normalizeQuery(query: QueryArticlesDto): {
-    page: number;
-    limit: number;
-    authorId?: string;
-    publishedFrom?: Date;
-    publishedTo?: Date;
-  } {
+  private normalizeQuery(query: QueryArticlesDto): NormalizedArticlesQuery {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 10, 50);
 
@@ -267,13 +244,7 @@ export class ArticlesService {
     };
   }
 
-  private buildListCacheKey(normalizedQuery: {
-    page: number;
-    limit: number;
-    authorId?: string;
-    publishedFrom?: Date;
-    publishedTo?: Date;
-  }): string {
+  private buildListCacheKey(normalizedQuery: NormalizedArticlesQuery): string {
     const serialized = JSON.stringify({
       ...normalizedQuery,
       publishedFrom: normalizedQuery.publishedFrom?.toISOString(),

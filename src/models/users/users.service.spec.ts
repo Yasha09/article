@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
-import { User } from './entities/user.entity';
-import { UsersRepository } from './users.repository';
+import { User } from '../../infrastructure/persistence/entities/user.entity';
+import { UsersRepository } from '../../infrastructure/persistence/repositories/users.repository';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {

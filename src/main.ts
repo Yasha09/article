@@ -1,14 +1,36 @@
-import { ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+
+function formatValidationErrors(errors: ValidationError[]): string[] {
+  return errors.flatMap((error) => {
+    const ownConstraints = error.constraints
+      ? Object.values(error.constraints)
+      : [];
+
+    const childConstraints = error.children?.length
+      ? formatValidationErrors(error.children)
+      : [];
+
+    return [...ownConstraints, ...childConstraints];
+  });
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const httpAdapterHost = app.get(HttpAdapterHost);
 
   app.setGlobalPrefix('api');
+
+  app.useGlobalFilters(new GlobalExceptionFilter(httpAdapterHost));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -16,6 +38,11 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: false },
+      exceptionFactory: (errors: ValidationError[]) =>
+        new BadRequestException({
+          message: formatValidationErrors(errors),
+          error: 'Bad Request',
+        }),
     }),
   );
 

@@ -9,13 +9,10 @@ import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-
-export interface RegisterResponse {
-  id: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import {
+  LoginResponse,
+  RegisterResponse,
+} from './interfaces/auth-response.interface';
 
 @Injectable()
 export class AuthService {
@@ -44,7 +41,7 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
+  async login(loginDto: LoginDto): Promise<LoginResponse> {
     const user = await this.usersService.findByEmail(loginDto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
