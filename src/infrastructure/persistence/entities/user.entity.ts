@@ -6,7 +6,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Article } from './article.entity';
+import { Author } from './author.entity';
+import { Book } from './book.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -25,6 +26,9 @@ export class User {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @OneToMany(() => Article, (article) => article.author)
-  articles: Article[];
+  @OneToMany(() => Book, (book) => book.createdBy)
+  createdBooks: Book[];
+
+  @OneToMany(() => Author, (author) => author.createdBy)
+  createdAuthors: Author[];
 }

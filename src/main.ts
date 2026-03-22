@@ -5,7 +5,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
@@ -24,11 +26,20 @@ function formatValidationErrors(errors: ValidationError[]): string[] {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
   const httpAdapterHost = app.get(HttpAdapterHost);
+  const uploadsRoot = join(process.cwd(), 'uploads');
+
+  app.use((request, _response, next) => {
+    request.url = request.url.replace(/\/{2,}/g, '/');
+    next();
+  });
 
   app.setGlobalPrefix('api');
+  app.useStaticAssets(uploadsRoot, {
+    prefix: '/uploads/',
+  });
 
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapterHost));
 
@@ -49,7 +60,7 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('NestJS CRUD API')
     .setDescription(
-      'JWT-protected articles API with PostgreSQL and Redis cache',
+      'JWT-protected books and authors API with PostgreSQL, Redis cache, and local file uploads',
     )
     .setVersion('1.0.0')
     .addBearerAuth()

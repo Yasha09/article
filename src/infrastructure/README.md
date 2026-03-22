@@ -7,7 +7,7 @@ External services and technical implementations used by the application.
 ```
 infrastructure/
 ├── persistence/     # PostgreSQL via TypeORM
-│   ├── entities/    # Database entities (users, articles)
+│   ├── entities/    # Database entities (users, books, authors)
 │   ├── migrations/  # TypeORM migrations
 │   ├── repositories/ # Data access layer
 │   ├── data-source.ts   # CLI migrations (yarn typeorm)

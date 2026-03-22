@@ -4,7 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { config } from './config';
 import { envValidationSchema } from './config/config-validation.schema';
 import { AuthModule } from './models/auth/auth.module';
-import { ArticlesModule } from './models/addresses/articles.module';
+import { AuthorsModule } from './models/authors/authors.module';
+import { BooksModule } from './models/books/books.module';
 import { RedisModule } from './infrastructure/cache/redis.module';
 import { UsersModule } from './models/users/users.module';
 import { AppController } from './app.controller';
@@ -35,7 +36,8 @@ import { getTypeOrmConfig } from './infrastructure/persistence/typeorm.config';
     RedisModule,
     UsersModule,
     AuthModule,
-    ArticlesModule,
+    AuthorsModule,
+    BooksModule,
   ],
 })
 export class AppModule {}

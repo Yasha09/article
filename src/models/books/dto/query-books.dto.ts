@@ -4,12 +4,14 @@ import {
   IsDateString,
   IsInt,
   IsOptional,
+  IsString,
   IsUUID,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
-export class QueryArticlesDto {
+export class QueryBooksDto {
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()
   @Type(() => Number)
@@ -24,6 +26,18 @@ export class QueryArticlesDto {
   @Min(1)
   @Max(50)
   limit?: number = 10;
+
+  @ApiPropertyOptional({ description: 'Search by title, summary, or author name' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by category name' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  category?: string;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()

@@ -1,15 +1,16 @@
 # NestJS CRUD API
 
-Production-style NestJS REST API with JWT auth, PostgreSQL (TypeORM + migrations), Redis caching, and Jest unit tests.
+Production-style NestJS REST API with JWT auth, PostgreSQL migrations, Redis caching, and local Multer uploads for books and authors.
 
 ## Features
 
-- JWT authentication (`/auth/register`, `/auth/login`)
-- Users module (`GET /users/me`)
-- Article CRUD with ownership checks
+- JWT authentication (`/api/auth/register`, `/api/auth/login`)
+- Users module (`GET /api/users/me`)
+- Public read access for books and authors
+- Owner-protected create/update/delete flows
 - PostgreSQL via TypeORM with migrations (`synchronize: false`)
-- Redis caching for article read endpoints
-- DTO validation with `class-validator` and `class-transformer`
+- Redis caching for public book and author reads
+- Local file uploads exposed over `/uploads/*`
 - Swagger docs at `/docs`
 
 ## Setup
@@ -26,7 +27,7 @@ yarn install
 cp .env.example .env
 ```
 
-3. Start infrastructure (Postgres + Redis):
+3. Start infrastructure:
 
 ```bash
 docker compose up -d
@@ -38,36 +39,22 @@ docker compose up -d
 yarn migration:run
 ```
 
-5. Start API in dev mode:
+5. Start the API:
 
 ```bash
 yarn start:dev
 ```
 
-API runs at `http://localhost:3000`.
-Swagger docs: `http://localhost:3000/docs`.
+API: `http://localhost:3000`
+Swagger: `http://localhost:3000/docs`
+Uploads: `http://localhost:3000/uploads/...`
 
-## Migration Commands
-
-```bash
-yarn migration:generate
-yarn migration:run
-yarn migration:revert
-```
-
-## Test Commands
-
-```bash
-yarn test
-yarn test:cov
-```
-
-## API Examples (curl)
+## API Examples
 
 ### Register
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password123"}'
 ```
@@ -75,61 +62,50 @@ curl -X POST http://localhost:3000/auth/register \
 ### Login
 
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password123"}'
 ```
 
-### Create article (auth required)
+### Create author with avatar
 
 ```bash
-curl -X POST http://localhost:3000/articles \
+curl -X POST http://localhost:3000/api/authors \
   -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Article title","description":"A sufficiently long article description","publishedAt":"2026-02-12T10:00:00.000Z"}'
+  -F "name=Author Name" \
+  -F "bio=Short author biography for the profile" \
+  -F "avatar=@/absolute/path/avatar.png"
 ```
 
-### Get current user profile (auth required)
+### Create book with cover
 
 ```bash
-curl http://localhost:3000/users/me \
-  -H "Authorization: Bearer <TOKEN>"
-```
-
-### List articles with pagination/filtering
-
-```bash
-curl "http://localhost:3000/articles?page=1&limit=10&authorId=<AUTHOR_UUID>&publishedFrom=2026-01-01T00:00:00.000Z&publishedTo=2026-12-31T23:59:59.999Z"
-```
-
-### Get article by ID
-
-```bash
-curl http://localhost:3000/articles/<ARTICLE_ID>
-```
-
-### Update article (author only)
-
-```bash
-curl -X PATCH http://localhost:3000/articles/<ARTICLE_ID> \
+curl -X POST http://localhost:3000/api/books \
   -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Updated title"}'
+  -F "title=Book title" \
+  -F "summary=A sufficiently long summary for the book resource" \
+  -F "publishedAt=2026-02-12T10:00:00.000Z" \
+  -F "authorId=<AUTHOR_UUID>" \
+  -F "cover=@/absolute/path/cover.png"
 ```
 
-### Delete article (author only)
+### List books with search/filtering
 
 ```bash
-curl -X DELETE http://localhost:3000/articles/<ARTICLE_ID> \
-  -H "Authorization: Bearer <TOKEN>"
+curl "http://localhost:3000/api/books?page=1&limit=10&search=story&authorId=<AUTHOR_UUID>&publishedFrom=2026-01-01T00:00:00.000Z&publishedTo=2026-12-31T23:59:59.999Z"
+```
+
+### List authors with search
+
+```bash
+curl "http://localhost:3000/api/authors?page=1&limit=10&search=doe"
 ```
 
 ## Cache Rules
 
 - Cached endpoints:
-  - `GET /articles` using key `articles:list:<hash>`
-  - `GET /articles/:id` using key `articles:byId:<id>`
+  - `GET /api/books`
+  - `GET /api/books/:id`
+  - `GET /api/authors`
+  - `GET /api/authors/:id`
 - TTL is `CACHE_TTL_SECONDS` (default 60)
-- Invalidation:
-  - `POST /articles`: clear `articles:list:*`
-  - `PATCH /articles/:id`, `DELETE /articles/:id`: clear `articles:byId:<id>` and `articles:list:*`

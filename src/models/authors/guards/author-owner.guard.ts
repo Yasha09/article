@@ -4,11 +4,11 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { ArticlesService } from '../articles.service';
+import { AuthorsService } from '../authors.service';
 
 @Injectable()
-export class ArticleOwnerGuard implements CanActivate {
-  constructor(private readonly articlesService: ArticlesService) {}
+export class AuthorOwnerGuard implements CanActivate {
+  constructor(private readonly authorsService: AuthorsService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<{
@@ -16,12 +16,10 @@ export class ArticleOwnerGuard implements CanActivate {
       user: { userId: string };
     }>();
 
-    const article = await this.articlesService.getArticleOrFail(
-      request.params.id,
-    );
-    if (article.author.id !== request.user.userId) {
+    const author = await this.authorsService.getAuthorOrFail(request.params.id);
+    if (author.createdBy.id !== request.user.userId) {
       throw new ForbiddenException(
-        'You are not allowed to modify this article',
+        'You are not allowed to modify this author',
       );
     }
 

@@ -1,6 +1,8 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import type { DataSourceOptions } from 'typeorm';
-import { Article } from './entities/article.entity';
+import { Author } from './entities/author.entity';
+import { Book } from './entities/book.entity';
+import { Category } from './entities/category.entity';
 import { User } from './entities/user.entity';
 
 export interface TypeOrmConnectionOverrides {
@@ -27,7 +29,7 @@ export const getDataSourceOptions = (
   username: overrides.username ?? process.env.DATABASE_USERNAME ?? '',
   password: overrides.password ?? process.env.DATABASE_PASSWORD ?? '',
   database: overrides.database ?? process.env.DATABASE_NAME ?? '',
-  entities: [User, Article],
+  entities: [User, Author, Category, Book],
   migrations: overrides.migrations ?? [
     'dist/infrastructure/persistence/migrations/*.js',
   ],
